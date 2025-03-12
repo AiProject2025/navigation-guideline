@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dominion Financial - Guidelines Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        
+        body {
+            overflow-x: hidden;
+            color: #333;
+            position: relative;
+            background-color: #f9f9f9;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        .page-title {
+            color: #0D3158;
+            font-size: 28px;
+            margin-bottom: 40px;
+            text-align: center;
+            border-bottom: 2px solid #8BC34A;
+            padding-bottom: 15px;
+        }
+        
+        /* Chatbot styles */
+        .chatbot-trigger {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background-color: #8BC34A;
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 24px;
+            z-index: 999;
+            transition: transform 0.3s, box-shadow 0.3s;
+            opacity: 1;
+            transform: scale(1);
+            animation: bounce 1s;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-20px); }
+            60% { transform: translateY(-10px); }
+        }
+        
+        .chatbot-trigger:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .chatbot-indicator {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 15px;
+            height: 15px;
+            background-color: #FF5722;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+        
+        .chatbot-status-message {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            background-color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            max-width: 250px;
+            z-index: 998;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s, transform 0.5s;
+            pointer-events: none;
+        }
+        
+        .chatbot-status-message.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .chatbot-overlay {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 380px;
+            height: 500px;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s, visibility 0.5s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .chatbot-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .chatbot-container {
+            background-color: white;
+            width: 100%;
+            height: 100%;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            transform: scale(0.8);
+            opacity: 0;
+            transition: transform 0.5s, opacity 0.5s;
+        }
+        
+        .chatbot-overlay.active .chatbot-container {
+            transform: scale(1);
+            opacity: 1;
+        }
+        
+        .chatbot-header {
+            background-color: #0D3158;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .chatbot-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .chatbot-title h3 {
+            font-size: 18px;
+            margin: 0;
+        }
+        
+        .chatbot-status {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background-color: #8BC34A;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.7; }
+        }
+        
+        .close-chat {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        .chatbot-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            max-width: 75%;
+            animation: fadeIn 0.3s forwards;
+            opacity: 0;
+        }
+        
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+        
+        .bot-message {
+            background-color: #e9f5ff;
+            padding: 12px 15px;
+            border-radius: 15px 15px 15px 0;
+            color: #0D3158;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        
+        .user-message {
+            background-color: #8BC34A;
+            padding: 12px 15px;
+            border-radius: 15px 15px 0 15px;
+            color: white;
+            margin-left: auto;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+            background-color: #e9f5ff;
+            padding: 12px 15px;
+            border-radius: 15px 15px 15px 0;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #0D3158;
+            border-radius: 50%;
+            margin: 0 2px;
+            opacity: 0.7;
+        }
+        
+        .typing-dot:nth-child(1) { animation: typingDot 1.4s infinite 0s; }
+        .typing-dot:nth-child(2) { animation: typingDot 1.4s infinite 0.2s; }
+        .typing-dot:nth-child(3) { animation: typingDot 1.4s infinite 0.4s; }
+        
+        @keyframes typingDot {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-5px); }
+        }
+        
+        .chatbot-input {
+            display: flex;
+            padding: 15px;
+            background-color: white;
+            border-top: 1px solid #eee;
+        }
+        
+        .chatbot-input input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            outline: none;
+        }
+        
+        .chatbot-input input:focus {
+            border-color: #8BC34A;
+        }
+        
+        .send-btn {
+            background-color: #8BC34A;
+            color: white;
+            border: none;
+            padding: 0 20px;
+            border-radius: 5px;
+            margin-left: 10px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        /* Initial animation for the chat */
+        .welcome-animation {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #0D3158;
+            z-index: 10;
+            animation: welcomeFade 3s forwards;
+        }
+        
+        @keyframes welcomeFade {
+            0%, 70% { opacity: 1; }
+            100% { opacity: 0; visibility: hidden; }
+        }
+        
+        .welcome-text {
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            transform: scale(0);
+            animation: welcomeScale 2.5s forwards;
+        }
+        
+        @keyframes welcomeScale {
+            0% { transform: scale(0); }
+            40%, 60% { transform: scale(1.2); }
+            70% { transform: scale(1); }
+            100% { transform: scale(1); }
+        }
+
+        .guidelines-content {
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 40px;
+        }
+
+        .guidelines-content h2 {
+            color: #0D3158;
+            margin-bottom: 20px;
+        }
+
+        .guidelines-content p {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .quick-links {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+        }
+
+        .quick-links h3 {
+            color: #0D3158;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .quick-links ul {
+            list-style: none;
+        }
+
+        .quick-links li {
+            margin-bottom: 10px;
+        }
+
+        .quick-links a {
+            color: #114279;
+            text-decoration: none;
+            display: block;
+            padding: 8px 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .quick-links a:hover {
+            background-color: #f5f5f5;
+        }
+
+        .suggested-questions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .suggested-question {
+            background-color: #f0f7ff;
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+            border: 1px solid #e0e7ef;
+        }
+
+        .suggested-question:hover {
+            background-color: #e0e7ef;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="page-title">Dominion Financial Wholesale Guidelines</h1>
+        
+        <div class="quick-links">
+            <h3>Quick Navigation</h3>
+            <ul>
+                <li><a href="#general">General Information</a></li>
+                <li><a href="#eligibility">Broker Eligibility</a></li>
+                <li><a href="#products">Product Information</a></li>
+                <li><a href="#documentation">Required Documentation</a></li>
+                <li><a href="#contact">Contact Information</a></li>
+            </ul>
+        </div>
+        
+        <div class="guidelines-content" id="general">
+            <h2>Welcome to Dominion Financial Wholesale Guidelines</h2>
+            <p>This guide provides comprehensive information on our loan programs, eligibility requirements, and processes. Use the chatbot in the lower right corner to quickly find specific information within the guidelines.</p>
+            <p>Our chatbot assistant is available 24/7 to help you navigate these guidelines and answer any questions you may have about our wholesale mortgage products and policies.</p>
+        </div>
+    </div>
+    
+    <!-- Chatbot elements -->
+    <div class="chatbot-trigger" id="chatTrigger">
+        <i class="chat-icon">💬</i>
+        <span class="chatbot-indicator"></span>
+    </div>
+    
+    <div class="chatbot-status-message" id="chatStatus">
+        <strong>AI Assistant Activated</strong>
+        <p>I'm ready to help with your wholesale mortgage questions!</p>
+    </div>
+    
+    <!-- Chatbot overlay -->
+    <div class="chatbot-overlay" id="chatOverlay">
+        <div class="chatbot-container">
+            <div class="welcome-animation">
+                <div class="welcome-text">Welcome to Dominion AI Assistant</div>
+            </div>
+            <div class="chatbot-header">
+                <div class="chatbot-title">
+                    <div class="chatbot-title-icon">🏦</div>
+                    <h3>Dominion Mortgage Intelligence</h3>
+                </div>
+                <div class="chatbot-status">
+                    <div class="status-dot"></div>
+                    <span>Online</span>
+                </div>
+                <button class="close-chat" id="closeChat">×</button>
+            </div>
+            <div class="chatbot-messages" id="chatMessages">
+                <!-- Messages will be added here via JavaScript -->
+            </div>
+            <div class="chatbot-input">
+                <input type="text" placeholder="Type your question here..." id="messageInput">
+                <button class="send-btn" id="sendMessage">Send</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatTrigger = document.getElementById('chatTrigger');
+            const chatStatus = document.getElementById('chatStatus');
+            const chatOverlay = document.getElementById('chatOverlay');
+            const closeChat = document.getElementById('closeChat');
+            const chatMessages = document.getElementById('chatMessages');
+            const messageInput = document.getElementById('messageInput');
+            const sendMessage = document.getElementById('sendMessage');
+            
+            // Show chat button
+            chatTrigger.classList.add('active');
+            
+            // Show status message
+            chatStatus.classList.add('active');
+            
+            // Hide status message after 5 seconds
+            setTimeout(() => {
+                chatStatus.classList.remove('active');
+            }, 5000);
+            
+            // Open chat when the chat trigger is clicked
+            chatTrigger.addEventListener('click', function() {
+                chatOverlay.classList.add('active');
+                
+                // If this is the first time opening, add welcome messages
+                if (!chatMessages.querySelector('.message')) {
+                    setTimeout(() => {
+                        addBotMessage("Welcome to Dominion Mortgage Intelligence. How can I assist you with your lending needs today?");
+                    }, 1000);
+                    
+                    setTimeout(() => {
+                        addBotMessage("You can ask me about:<br>• Loan eligibility requirements<br>• Document checklists<br>• Current rates<br>• Application status<br>• Income calculation methods");
+                        
+                        // Add suggested questions
+                        const suggestedQuestions = document.createElement('div');
+                        suggestedQuestions.className = 'suggested-questions';
+                        
+                        const questions = [
+                            "What are the DSCR requirements?",
+                            "Tell me about Non-QM products",
+                            "What's the maximum LTV?",
+                            "How do I check broker eligibility?",
+                            "What states are eligible?"
+                        ];
+                        
+                        questions.forEach(q => {
+                            const questionChip = document.createElement('div');
+                            questionChip.className = 'suggested-question';
+                            questionChip.textContent = q;
+                            questionChip.addEventListener('click', function() {
+                                addUserMessage(q);
+                                processUserMessage(q);
+                            });
+                            suggestedQuestions.appendChild(questionChip);
+                        });
+                        
+                        const lastMessage = chatMessages.lastElementChild;
+                        lastMessage.appendChild(document.createElement('br'));
+                        lastMessage.appendChild(document.createElement('br'));
+                        lastMessage.appendChild(suggestedQuestions);
+                    }, 2000);
+                }
+            });
+            
+            // Close chat
+            closeChat.addEventListener('click', function() {
+                chatOverlay.classList.remove('active');
+            });
+            
+            // Send message
+            function sendUserMessage() {
+                const message = messageInput.value.trim();
+                if (message) {
+                    addUserMessage(message);
+                    messageInput.value = '';
+                    
+                    // Show typing indicator
+                    showTypingIndicator();
+                    
+                    // Simulate AI response after a delay
+                    setTimeout(() => {
+                        hideTypingIndicator();
+                        processUserMessage(message);
+                    }, 1000);
+                }
+            }
+            
+            // Process the user's message and return an appropriate response
+            function processUserMessage(message) {
+                const lowercaseMsg = message.toLowerCase();
+                
+                // Check for different types of queries and provide appropriate responses
+                if (lowercaseMsg.includes('dscr') || lowercaseMsg.includes('debt service coverage')) {
+                    addBotMessage("For DSCR loans, we offer the following options:<br><br>• Minimum DSCR: 0.75 for standard DSCR products<br>• Minimum DSCR: 1.0 for Premier Elite program<br>• No income documentation needed for qualification<br>• Available for 1-4 unit properties<br>• Short-term and long-term rental income can be used<br><br>Would you like more specific information about DSCR calculation or eligibility?");
+                    
+                    addSuggestedQuestions([
+                        "What's the minimum credit score for DSCR?",
+                        "How is DSCR calculated?",
+                        "Short-term rental requirements",
+                        "Maximum LTV for DSCR loans"
+                    ]);
+                } 
+                else if (lowercaseMsg.includes('non-qm') || lowercaseMsg.includes('alternative documentation')) {
+                    addBotMessage("Our Non-QM programs include:<br><br>• Investor Premier for investment properties<br>• Prestige & Prestige Plus for primary, second home & investment<br>• Premier Elite for top-tier borrowers<br>• Alternative income documentation options:<br> - Bank Statements (12 or 24 months)<br> - P&L Only<br> - 1099<br> - Asset Utilization<br> - WVOE<br><br>Would you like specific details on any of these programs?");
+                    
+                    addSuggestedQuestions([
+                        "Bank Statement requirements",
+                        "P&L Only requirements",
+                        "Asset Utilization details",
+                        "Maximum LTV for Non-QM"
+                    ]);
+                }
+                else if (lowercaseMsg.includes('ltv') || lowercaseMsg.includes('loan to value')) {
+                    addBotMessage("Maximum LTV/CLTV limits vary by program:<br><br>• Investor Premier: up to 80% LTV<br>• Prestige Plus: up to 90% LTV<br>• Prestige: up to 90% LTV<br>• Premier Elite: up to 80% LTV<br><br>LTV limits may be lower based on:<br>• Credit score<br>• Loan amount<br>• Property type<br>• Occupancy<br>• Transaction type<br>• State restrictions<br><br>Would you like specific LTV details for a particular scenario?");
+                    
+                    addSuggestedQuestions([
+                        "LTV for investment properties",
+                        "LTV for cash-out refinance",
+                        "LTV for condos",
+                        "State-specific LTV restrictions"
+                    ]);
+                }
+                else if (lowercaseMsg.includes('eligibility') || lowercaseMsg.includes('broker')) {
+                    addBotMessage("Broker eligibility requirements include:<br><br>• Valid organization in good standing<br>• Required licenses for states of operation<br>• Compliance with all federal, state, and local regulations<br>• No bankruptcies, foreclosures, or unsatisfied tax liens by principals in last 4 years<br>• Not listed on exclusionary lists (GSEs, HUD)<br>• Not under investigation by any government agency<br><br>To apply, complete our application process through Loanscape platform.");
+                    
+                    addSuggestedQuestions([
+                        "How to apply as a broker",
+                        "Required licenses",
+                        "Annual recertification",
+                        "Contact information"
+                    ]);
+                }
+                else if (lowercaseMsg.includes('state') || lowercaseMsg.includes('states eligible')) {
+                    addBotMessage("Dominion Financial offers loans nationwide with some state-specific restrictions:<br><br>• Investor Premier & Premier Elite: All states except US territories<br>• CT, IL, NJ, and NY Properties: Maximum 75% LTV for purchases, 70% for refinances<br>• Some states have prepayment penalty restrictions<br><br>Additionally, some states require specific licensing for business purpose loans. Would you like information on a specific state?");
+                    
+                    addSuggestedQuestions([
+                        "Texas loan requirements",
+                        "New York CEMA",
+                        "Florida condo requirements",
+                        "Prepayment penalty restrictions"
+                    ]);
+                }
+                else if (lowercaseMsg.includes('document') || lowercaseMsg.includes('documentation')) {
+                    addBotMessage("Our income documentation options include:<br><br>• Standard Documentation (12 or 24 months)<br>• Bank Statements (Personal or Business)<br>• P&L Only<br>• 1099<br>• Asset Utilization<br>• Written Verification of Employment<br>• Debt Service Coverage (DSCR)<br><br>Each option has specific requirements. Which documentation type would you like to learn more about?");
+                    
+                    addSuggestedQuestions([
+                        "Bank Statement requirements",
+                        "P&L documentation details",
+                        "WVOE requirements",
+                        "Asset Utilization qualification"
+                    ]);
+                }
+                else if (lowercaseMsg.includes('contact') || lowercaseMsg.includes('phone') || lowercaseMsg.includes('email')) {
+                    addBotMessage("Dominion Financial Wholesale Contact Information:<br><br>• Main Number: (512) 971-6002<br>• Hours: 8:00 am – 5:00 pm CT<br>• Website: www.dominionfinancialwholesale.com<br>• PODIUM Loan Portal: podium.dominionfinancialwholesale.com<br><br>Email Departments:<br>• Support: LenderSupport@thedominiongroup.com<br>• Submissions: Submissions@thedominiongroup.com<br>• Scenario Desk: ScenarioDesk@thedominiongroup.com<br>• Lock Desk: LockDesk@thedominiongroup.com<br>• Underwriting: UWescalations@thedominiongroup.com");
+                }
+                else if (lowercaseMsg.includes('credit') || lowercaseMsg.includes('fico')) {
+                    addBotMessage("Credit score requirements vary by program:<br><br>• Investor Premier: Minimum 660 FICO<br>• Prestige Plus: Minimum 680 FICO<br>• Prestige: Minimum 660 FICO<br>• Premier Elite: Minimum 680 FICO<br><br>Additional credit requirements:<br>• Housing payment history requirements (0x30x12 to 0x30x24)<br>• Minimum tradeline requirements<br>• Bankruptcy/foreclosure seasoning (36-48 months)<br>• Collections/charge-offs may need to be paid<br><br>Would you like specific credit details for a particular program?");
+                    
+                    addSuggestedQuestions([
+                        "Housing history requirements",
+                        "Bankruptcy seasoning",
+                        "Tradeline requirements",
+                        "Collection/charge-off policy"
+                    ]);
+                }
+                else if (lowercaseMsg.includes('property') || lowercaseMsg.includes('properties')) {
+                    addBotMessage("Eligible property types include:<br><br>• Single Family (1-4 units)<br>• 5-10 Unit residential (DSCR only)<br>• Condominiums (Warrantable & Non-Warrantable)<br>• Properties up to 20 acres (program specific)<br><br>Ineligible properties include:<br>• Mixed Use Properties<br>• Commercial or Industrial zoned<br>• Manufactured/Mobile homes<br>• Co-ops<br>• Properties with zoning violations<br>• Rural properties<br><br>Would you like details on specific property types?");
+                    
+                    addSuggestedQuestions([
+                        "Condo requirements",
+                        "5-10 unit requirements",
+                        "Maximum acreage",
+                        "Short-term rental properties"
+                    ]);
+                }
+                else if (lowercaseMsg.includes('appraisal')) {
+                    addBotMessage("Appraisal requirements include:<br><br>• Full interior/exterior appraisal required<br>• Valid for 180 days (recertification needed after 120 days)<br>• Appraisal review product required on all loans<br>• Second appraisal required for:<br>  - Loan amounts over $1.5-2M (program specific)<br>  - Certain property flips<br>  - When ARR/CDA differs by more than 10%<br><br>Would you like more information on specific appraisal requirements?");
+                    
+                    addSuggestedQuestions([
+                        "Appraisal review requirements",
+                        "Property flip rules",
+                        "Declining markets",
+                        "Condo appraisal requirements"
+                    ]);
+                }
+                else if (lowercaseMsg.includes('assets') || lowercaseMsg.includes('reserves')) {
+                    addBotMessage("Asset and reserve requirements:<br><br>• Documentation: Bank/investment statements covering at least 1 month<br>• Reserve requirements vary by program and LTV:<br>  - DSCR 1.0+ with LTV ≤70%: 3 months<br>  - DSCR 1.0+ with LTV >70%: 6 months<br>  - DSCR .75-.99: 6 months<br>  - Cash Out: 6 months<br>  - Loans over $1.5M: 6-12 months<br><br>Large deposits may require sourcing. Gift funds allowed for purchase transactions with minimum borrower contribution.");
+                    
+                    addSuggestedQuestions([
+                        "Eligible asset types",
+                        "Gift fund requirements",
+                        "Large deposit policy",
+                        "Foreign asset requirements"
+                    ]);
+                }
+                else if (lowercaseMsg.includes('hello') || lowercaseMsg.includes('hi')) {
+                    addBotMessage("Hello! I'm the Dominion Guidelines Assistant. How can I help you with our wholesale mortgage guidelines today?");
+                    
+                    addSuggestedQuestions([
+                        "Tell me about your loan programs",
+                        "What are your eligibility requirements?",
+                        "Where can I find product matrices?",
+                        "How do I contact Dominion?"
+                    ]);
+                }
+                else {
+                    addBotMessage("I understand you're asking about " + message + ". While I have information on many guideline topics, I may not have all the specific details you need. You can ask about loan programs, eligibility requirements, documentation, property types, credit requirements, or contact information. You can also check our complete guidelines on our website or contact our support team for more assistance.");
+                    
+                    addSuggestedQuestions([
+                        "Loan programs",
+                        "Eligibility requirements",
+                        "Documentation options",
+                        "Contact information"
+                    ]);
+                }
+            }
+
+            function addSuggestedQuestions(questions) {
+                const suggestedQuestions = document.createElement('div');
+                suggestedQuestions.className = 'suggested-questions';
+                
+                questions.forEach(q => {
+                    const questionChip = document.createElement('div');
+                    questionChip.className = 'suggested-question';
+                    questionChip.textContent = q;
+                    questionChip.addEventListener('click', function() {
+                        addUserMessage(q);
+                        processUserMessage(q);
+                    });
+                    suggestedQuestions.appendChild(questionChip);
+                });
+                
+                const lastMessage = chatMessages.lastElementChild;
+                lastMessage.appendChild(document.createElement('br'));
+                lastMessage.appendChild(document.createElement('br'));
+                lastMessage.appendChild(suggestedQuestions);
+            }
+            
+            // Add user message to chat
+            function addUserMessage(message) {
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('message', 'user-message');
+                messageElement.textContent = message;
+                chatMessages.appendChild(messageElement);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            // Add bot message to chat
+            function addBotMessage(message) {
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('message', 'bot-message');
+                messageElement.innerHTML = message;
+                chatMessages.appendChild(messageElement);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            // Show typing indicator
+            function showTypingIndicator() {
+                const typingElement = document.createElement('div');
+                typingElement.classList.add('message', 'typing-indicator');
+                typingElement.id = 'typingIndicator';
+                
+                for (let i = 0; i < 3; i++) {
+                    const dot = document.createElement('div');
+                    dot.classList.add('typing-dot');
+                    typingElement.appendChild(dot);
+                }
+                
+                chatMessages.appendChild(typingElement);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            // Hide typing indicator
+            function hideTypingIndicator() {
+                const typingElement = document.getElementById('typingIndicator');
+                if (typingElement) {
+                    typingElement.remove();
+                }
+            }
+            
+            // Send message on button click
+            sendMessage.addEventListener('click', sendUserMessage);
+            
+            // Send message on Enter key
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendUserMessage();
+                }
+            });
+            
+            // Highlight specific sections in the guidelines based on chat inquiries
+            function highlightSection(sectionId) {
+                // Remove previous highlights
+                document.querySelectorAll('.guidelines-content').forEach(section => {
+                    section.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.05)';
+                });
+                
+                // Add highlight to relevant section
+                const section = document.getElementById(sectionId);
+                if (section) {
+                    section.style.boxShadow = '0 0 20px rgba(139, 195, 74, 0.5)';
+                    section.scrollIntoView({ behavior: 'smooth' });
+                    
+                    // Reset highlight after 3 seconds
+                    setTimeout(() => {
+                        section.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.05)';
+                    }, 3000);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
